@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { prismaErrors } from 'prisma/errors';
 import { PrismaService } from 'src/prisma.service';
 import { CreateUserDto } from './dto/createUser.dto';
+import { LoginUserDto } from './dto/loginUser.dto';
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
@@ -52,5 +53,23 @@ export class UserService {
     } catch (error) {
       this.handlePrismaError(error);
     }
+  }
+
+  async userLogin(loginData: LoginUserDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: loginData.email,
+      },
+      select: { password: true },
+    });
+
+    if (!user) throw new BadRequestException('This User is not registered');
+
+    const isPasswordValid = await bcrypt.compare(
+      loginData.password,
+      user.password,
+    );
+
+    return isPasswordValid;
   }
 }
