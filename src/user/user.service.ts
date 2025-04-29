@@ -1,13 +1,24 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { prismaErrors } from 'prisma/errors';
 import { PrismaService } from 'src/prisma.service';
 import { CreateUserDto } from './dto/createUser.dto';
 import { LoginUserDto } from './dto/loginUser.dto';
+
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly config: ConfigService,
+  ) {}
 
   private readonly saltRounds = 11;
 
@@ -60,16 +71,23 @@ export class UserService {
       where: {
         email: loginData.email,
       },
-      select: { password: true },
+      select: { password: true, email: true, id: true },
     });
 
-    if (!user) throw new BadRequestException('This User is not registered');
+    if (!user) throw new BadRequestException('This Email is not regostered');
 
     const isPasswordValid = await bcrypt.compare(
       loginData.password,
       user.password,
     );
 
-    return isPasswordValid;
+    if (!isPasswordValid) throw new UnauthorizedException();
+    const payload = { sub: user.id, username: user.email };
+    console.log(this.config.get<string>('DATABASE_URL'));
+    return {
+      Token: `Bearer ${await this.jwtService.signAsync(payload)}`,
+
+      statusCode: 200,
+    };
   }
 }
