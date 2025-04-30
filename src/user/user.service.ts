@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { Request } from 'express';
 import { prismaErrors } from 'prisma/errors';
 import { PrismaService } from 'src/prisma.service';
 import { CreateUserDto } from './dto/createUser.dto';
@@ -99,5 +100,36 @@ export class UserService {
     const data = { sosok: 'sosok', porn: 'papka s porno' };
 
     return data;
+  }
+
+  async getNewToken(request: Request) {
+    const { cookies } = request;
+
+    if (!cookies) throw new UnauthorizedException();
+
+    const [type, refreshToken] = cookies.refreshToken.split(' ');
+
+    if (type !== 'Bearer') throw new UnauthorizedException();
+
+    const payload = this.jwtService.verify(refreshToken);
+
+    if (!payload) throw new UnauthorizedException();
+
+    const newToken = await this.jwtService.signAsync({
+      sub: payload.sub,
+      username: payload.username,
+    });
+
+    const newRefreshToken = await this.jwtService.signAsync(
+      { sub: payload.sub, username: payload.username },
+      {
+        expiresIn: '30d',
+      },
+    );
+
+    return {
+      newToken: `Bearer ${newToken}`,
+      newRefreshToken: `Bearer ${newRefreshToken}`,
+    };
   }
 }
