@@ -20,8 +20,6 @@ export class UserService {
     private readonly config: ConfigService,
   ) {}
 
-  private readonly saltRounds = 11;
-
   private readonly userSelect = {
     id: true,
     email: true,
@@ -54,7 +52,8 @@ export class UserService {
 
     const { password, ...restData } = data;
 
-    const hashedPassword = await bcrypt.hash(password, this.saltRounds);
+    const saltRounds = await this.config.get('SALT_ROUNDS', 12);
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     try {
       return await this.prisma.user.create({
@@ -83,11 +82,22 @@ export class UserService {
 
     if (!isPasswordValid) throw new UnauthorizedException();
     const payload = { sub: user.id, username: user.email };
-    console.log(this.config.get<string>('DATABASE_URL'));
-    return {
-      Token: `Bearer ${await this.jwtService.signAsync(payload)}`,
 
+    const token = await this.jwtService.signAsync(payload);
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      expiresIn: '30d',
+    });
+
+    return {
+      token: `Bearer ${token}`,
+      refreshToken: `Bearer ${refreshToken}`,
       statusCode: 200,
     };
+  }
+
+  getCartItems() {
+    const data = { sosok: 'sosok', porn: 'papka s porno' };
+
+    return data;
   }
 }
