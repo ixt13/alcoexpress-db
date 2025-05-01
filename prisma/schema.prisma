@@ -11,7 +11,34 @@ model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   name      String
-  password  String   
+  password  String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt  
+  updatedAt DateTime @updatedAt
+  cart      CartItem[]
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  itemId    Int
+  quantity  Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId],references: [id])
+  item      Item     @relation(fields: [itemId], references: [id])
+ @@index([userId])
+ @@unique([itemId,userId])
+}
+
+model Item {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  alcVol      Int
+  description String
+  photoUrl    String
+  price       Int
+  volume      Float
+  inStock     Boolean
+  category    String
+  createdAt   DateTime   @default(now())
+  cartItems   CartItem[]
 }

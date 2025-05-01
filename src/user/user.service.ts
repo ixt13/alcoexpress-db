@@ -5,11 +5,12 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { Request } from 'express';
-import { prismaErrors } from 'prisma/errors';
+
 import { PrismaService } from 'src/prisma.service';
+
+import { PrismaErrorService } from 'prisma/prismaError.service';
 import { CreateUserDto } from './dto/createUser.dto';
 import { LoginUserDto } from './dto/loginUser.dto';
 
@@ -19,6 +20,7 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
+    private readonly prismaErrorService: PrismaErrorService,
   ) {}
 
   private readonly userSelect = {
@@ -29,21 +31,11 @@ export class UserService {
     password: true,
   };
 
-  private handlePrismaError(error: any): never {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      const handler = prismaErrors.get(error.code);
-      if (handler) throw handler();
-      throw new BadRequestException(`Prisma error: ${error.message}`);
-    }
-
-    throw new BadRequestException(`Unexpected error: ${error.message}`);
-  }
-
   async findAll() {
     try {
       return await this.prisma.user.findMany({ select: this.userSelect });
     } catch (error) {
-      this.handlePrismaError(error);
+      this.prismaErrorService.handlePrismaError(error);
     }
   }
 
@@ -62,7 +54,7 @@ export class UserService {
         select: this.userSelect,
       });
     } catch (error) {
-      this.handlePrismaError(error);
+      this.prismaErrorService.handlePrismaError(error);
     }
   }
 
