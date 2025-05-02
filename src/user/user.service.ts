@@ -27,8 +27,6 @@ export class UserService {
     id: true,
     email: true,
     name: true,
-    createdAt: true,
-    password: true,
   };
 
   async findAll() {
@@ -40,9 +38,6 @@ export class UserService {
   }
 
   async createUser(data: CreateUserDto) {
-    if (data.password.length < 6)
-      throw new BadRequestException('Password is Required');
-
     const { password, ...restData } = data;
 
     const saltRounds = await this.config.get('SALT_ROUNDS', 12);

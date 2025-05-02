@@ -17,21 +17,28 @@ model User {
   cart      CartItem[]
 }
 
+
 model CartItem {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  itemId    Int
-  quantity  Int
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId],references: [id])
-  item      Item     @relation(fields: [itemId], references: [id])
- @@index([userId])
- @@unique([itemId,userId])
+  id Int @id @default(autoincrement())
+  
+  itemId Int 
+
+  item Item @relation(fields: [itemId] , references: [id])
+
+  userId Int
+
+  quantity Int
+
+  user User @relation(fields: [userId],references: [id])
+
+   @@unique([userId, itemId])
 }
 
-model Item {
+ 
+
+model Item {  
   id          Int        @id @default(autoincrement())
-  name        String     @unique
+  name        String    
   alcVol      Int
   description String
   photoUrl    String
@@ -40,5 +47,6 @@ model Item {
   inStock     Boolean
   category    String
   createdAt   DateTime   @default(now())
-  cartItems   CartItem[]
+  updateAt    DateTime   @updatedAt
+  cart  CartItem[]
 }
