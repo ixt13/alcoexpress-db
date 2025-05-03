@@ -11,13 +11,13 @@ export class CartItemService {
     private readonly prismaErrorService: PrismaErrorService,
   ) {}
 
-  async addToCart(body: AddtoCartDto) {
+  async addToCart(body: AddtoCartDto, userId) {
     try {
       const cartItem = await this.prisma.cartItem.findUnique({
         where: {
           userId_itemId: {
-            itemId: body.itemId,
-            userId: body.userId,
+            itemId: userId,
+            userId: userId,
           },
         },
       });
@@ -27,7 +27,7 @@ export class CartItemService {
           where: {
             userId_itemId: {
               itemId: body.itemId,
-              userId: body.userId,
+              userId: userId,
             },
           },
           data: {
@@ -41,8 +41,8 @@ export class CartItemService {
       const addItemToCart = await this.prisma.cartItem.create({
         data: {
           itemId: body.itemId,
-          userId: body.userId,
-          quantity: 1,
+          userId: userId,
+          quantity: body.quantity,
         },
       });
 
@@ -60,24 +60,32 @@ export class CartItemService {
     return `This action returns a #${id} cartItem`;
   }
 
-  async update(data: UpdateCartItemDto) {
+  async update(itemId: number, data: UpdateCartItemDto) {
     try {
       const item = await this.prisma.cartItem.findUnique({
-        where: { id: data.id },
+        where: { id: itemId },
       });
 
       if (!item) {
-        throw new BadRequestException(`Item with id:${data.id} is not found`);
+        throw new BadRequestException(`Item with id:${itemId} is not found`);
       }
 
       const response = await this.prisma.cartItem.update({
-        where: { id: data.id },
-        data: {},
+        where: { id: itemId },
+        data: { quantity: data.quantity },
       });
-    } catch (error) {}
+      return response;
+    } catch (error) {
+      this.prismaErrorService.handlePrismaError(error);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} cartItem`;
+  async remove(id: number) {
+    try {
+      const response = await this.prisma.cartItem.delete({ where: { id } });
+      return response;
+    } catch (error) {
+      this.prismaErrorService.handlePrismaError(error);
+    }
   }
 }

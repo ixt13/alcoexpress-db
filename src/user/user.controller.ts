@@ -17,14 +17,12 @@ import { UserService } from './user.service';
 
 @Controller('user')
 export class UserController {
-  constructor(
-    private readonly userService: UserService,
-    private readonly authGuard: AuthGuard,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  @UseGuards(AuthGuard)
+  findUser(@Req() req: Request) {
+    return this.userService.findUser(req);
   }
 
   @Post()
@@ -54,12 +52,6 @@ export class UserController {
     } catch (error) {
       throw new UnauthorizedException();
     }
-  }
-
-  @Get('/cart')
-  @UseGuards(AuthGuard)
-  getCartItems() {
-    return this.userService.getCartItems();
   }
 
   @Get('/tokenRefresh')

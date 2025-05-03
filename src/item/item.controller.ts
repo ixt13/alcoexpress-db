@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { CreateItemDto } from './dto/createItem.dto';
 
@@ -27,7 +28,13 @@ export class ItemController {
   }
 
   @Post('/create')
-  create(@Body() body: CreateItemDto) {
+  async create(@Body() body: CreateItemDto) {
+    const imageUrl = await this.itemService.uploadImage(body.photoUrl);
+
+    if (!imageUrl) throw new ServiceUnavailableException('');
+
+    body.photoUrl = imageUrl;
+
     return this.itemService.create(body);
   }
 

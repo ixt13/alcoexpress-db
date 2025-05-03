@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaErrorService } from 'prisma/prismaError.service';
 import { PrismaService } from 'src/prisma.service';
 import { CreateItemDto } from './dto/createItem.dto';
@@ -9,11 +10,12 @@ export class ItemService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly prismaErrorService: PrismaErrorService,
+    private readonly config: ConfigService,
   ) {}
 
   async create(data: CreateItemDto) {
     try {
-      const created = await this.prisma.item.create({ data: { ...data } });
+      const created = await this.prisma.item.create({ data });
 
       return created;
     } catch (error) {
@@ -75,6 +77,23 @@ export class ItemService {
       return response;
     } catch (error) {
       this.prismaErrorService.handlePrismaError(error);
+    }
+  }
+
+  async uploadImage(base64String: string) {
+    const baseUrl = this.config.get('IMGBB_BASE_URL');
+    const apiKey = this.config.get('IMGBB_KEY');
+    const formData = new FormData();
+    formData.append('image', base64String);
+    try {
+      const response = await fetch(`${baseUrl}?key=${apiKey}`, {
+        method: 'POST',
+        body: formData,
+      });
+      const result = await response.json();
+      return result.data.url;
+    } catch (error) {
+      throw new BadRequestException(error);
     }
   }
 

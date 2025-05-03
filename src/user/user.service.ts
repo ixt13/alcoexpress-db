@@ -29,9 +29,22 @@ export class UserService {
     name: true,
   };
 
-  async findAll() {
+  async findUser(request: Request) {
+    console.log(request.user);
+
+    const userId = request.user?.sub;
     try {
-      return await this.prisma.user.findMany({ select: this.userSelect });
+      return await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          createdAt: true,
+          updatedAt: true,
+          cart: { include: { item: true } },
+        },
+      });
     } catch (error) {
       this.prismaErrorService.handlePrismaError(error);
     }
@@ -40,7 +53,8 @@ export class UserService {
   async createUser(data: CreateUserDto) {
     const { password, ...restData } = data;
 
-    const saltRounds = await this.config.get('SALT_ROUNDS', 12);
+    const saltRounds = +this.config.get<number>('SALT_ROUNDS', 12);
+    console.log(typeof saltRounds);
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     try {
@@ -81,12 +95,6 @@ export class UserService {
       refreshToken: `Bearer ${refreshToken}`,
       statusCode: 200,
     };
-  }
-
-  getCartItems() {
-    const data = { sosok: 'sosok', porn: 'papka s porno' };
-
-    return data;
   }
 
   async getNewToken(request: Request) {

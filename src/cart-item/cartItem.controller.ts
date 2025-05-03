@@ -2,12 +2,16 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
   Param,
   Patch,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
+import { AuthGuard } from 'src/auth/auth.guard';
 import { CartItemService } from './cartItem.service';
+import { AddtoCartDto } from './dto/addToCartDto.dto';
 import { UpdateCartItemDto } from './dto/updateItemDto.dto';
 
 @Controller('cart-item')
@@ -15,23 +19,16 @@ export class CartItemController {
   constructor(private readonly cartItemService: CartItemService) {}
 
   @Post()
-  create(@Body() data) {
-    return this.cartItemService.addToCart(data);
-  }
+  @UseGuards(AuthGuard)
+  create(@Body() data: AddtoCartDto, @Req() req: Request) {
+    const userId = req.user?.sub;
 
-  @Get()
-  findAll() {
-    return this.cartItemService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cartItemService.findOne(+id);
+    return this.cartItemService.addToCart(data, userId);
   }
 
   @Patch(':id')
-  update(@Body() data: UpdateCartItemDto) {
-    return this.cartItemService.update(data);
+  update(@Param('id') id: string, @Body() data: UpdateCartItemDto) {
+    return this.cartItemService.update(+id, data);
   }
 
   @Delete(':id')
